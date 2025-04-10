@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: testdb
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: testpassword
+    ports:
+      - "3306:3306"
+
+  proxysql:
+    image: proxysql/proxysql
+    container_name: proxysql
+    restart: always
+    ports:
+      - "16032:6032"    
+      - "16033:6033"    
+      - "16070:6070"    
+    volumes:
+      - ./proxysql.cnf:/etc/proxysql.cnf
+    depends_on:
+      - mysql
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  proxysql-exporter:
+    build: ./proxysql-exporter
+    container_name: proxysql-exporter
+    ports:
+      - "9104:9104"
+    depends_on:
+      - proxysql
